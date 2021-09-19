@@ -60,7 +60,7 @@ int main(){
     // 65537 is chosen for efficiency as a Fermat prime, 2^2^m + 1 with m = 4
     uint32_t e = 65537;
 
-    // decryption exponent d, must satisfy e*d = 1(mod )
+    // decryption exponent d, must satisfy e*d = 1(mod λ(n))
     uint32_t d = modInverse(e, Carmichael);
 
     tuple<uint32_t, uint32_t> privateKey (e, n);
