@@ -6,22 +6,13 @@
 
 using namespace std;
 
-
 void SubBytes(vector<vector<unsigned char>> &state);
 void ShiftRows(vector<vector<unsigned char>> &state);
 void MixColumns(vector<vector<unsigned char>> &state);
 void AddRoundKey(vector<vector<unsigned char>> &state);
 void printSquareMatrix(vector<vector<unsigned char>> state);
 
-
-int main(){
-
-    const string message = "This will be the";
-    const int bits = 128;
-    const int dim = sqrt(bits/8);
-    vector<vector<unsigned char>> state(dim, vector<unsigned char>(dim));
-
-    const unsigned char SBox[16][16] = {
+const unsigned char SBox[16][16] = {
         {99, 124, 119, 123, 242, 107, 111, 197, 48, 1, 103, 43, 254, 215, 171, 118},
         {202, 130, 201, 125, 250, 89, 71, 240, 173, 212, 162, 175, 156, 164, 114, 192},
         {183, 253, 147, 38, 54, 63, 247, 204, 52, 165, 229, 241, 113, 216, 49, 21},
@@ -41,17 +32,41 @@ int main(){
     };
 
 
+int main(){
+
+    const string message = "This will be the";
+    const int bits = 128;
+    const int cols = 4;
+    const int rows = (bits/8)/4;
+    vector<vector<unsigned char>> state(rows, vector<unsigned char>(cols));
+
+
     //populate 2d vector, state, with message data
     for(int i=0; i<message.length(); i++){
-        for(int x=0; x<dim; x++){
-            for(int y=0; y<dim; y++){
-                state[y][x] = message[y*dim + x];
+        for(int x=0; x<cols; x++){
+            for(int y=0; y<rows; y++){
+                state[x][y] = message[y*rows + x];              //populate by column
             }
         }
     }
 
-    cout << "original matrix:" << endl;
-    printSquareMatrix(state);
+    // state[0][0] = 135;
+    // state[0][1] = 242;
+    // state[0][2] = 77;
+    // state[0][3] = 151;
+    // state[1][0] = 236;
+    // state[1][1] = 110;
+    // state[1][2] = 76;
+    // state[1][3] = 144;
+    // state[2][0] = 74;
+    // state[2][1] = 195;
+    // state[2][2] = 70;
+    // state[2][3] = 231;
+    // state[3][0] = 140;
+    // state[3][1] = 216;
+    // state[3][2] = 149;
+    // state[3][3] = 166;
+
 
     // for(int i=0; i<9; i++){                                 //9 rounds for 128 bit AES
     //     SubBytes(state);
@@ -59,14 +74,20 @@ int main(){
     //     MixColumns(state);
     //     AddRoundKey(state);
     // }
-    // SubBytes(state);                                     //+1 round without MixColumns
+    // SubBytes(state);                                       //+1 round without MixColumns
     // ShiftRows(state);
     // AddRoundKey(state);
 
 }
 
 void SubBytes(vector<vector<unsigned char>> &state){
-
+    for(int i=0; i<4; i++){
+        for(int j=0; j<4; j++){
+            int row = (state[i][j] >> (4 * 1)) & 0x000F;       //1st hex digit
+            int col = (state[i][j] >> (4 * 0)) & 0x000F;       //2nd hex digit
+            state[i][j] = SBox[row][col];
+        }
+    }
 }
 
 void ShiftRows(vector<vector<unsigned char>> &state){
