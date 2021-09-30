@@ -8,7 +8,8 @@ using namespace std;
 void SubBytes(vector<vector<unsigned char>> &state);
 void ShiftRows(vector<vector<unsigned char>> &state);
 void MixColumns(vector<vector<unsigned char>> &state);
-void AddRoundKey(vector<vector<unsigned char>> &state);
+void AddRoundKey(vector<vector<unsigned char>> &state, vector<vector<unsigned char>> roundKey);
+void Encrypt(vector<vector<unsigned char>> &state, vector<vector<unsigned char>> roundKey);
 void printSquareMatrix(vector<vector<unsigned char>> state);
 
 const unsigned char SBox[16][16] = {
@@ -83,6 +84,7 @@ int main(){
     const int cols = 4;
     const int rows = (bits/8)/4;
     vector<vector<unsigned char>> state(rows, vector<unsigned char>(cols));
+    vector<vector<unsigned char>> roundKey(rows, vector<unsigned char>(cols));
 
 
     //populate 2d vector, state, with message data
@@ -94,43 +96,45 @@ int main(){
         }
     }
 
-    state[0][0] = 135;
-    state[0][1] = 242;
-    state[0][2] = 77;
-    state[0][3] = 151;
-    state[1][0] = 110;
-    state[1][1] = 76;
-    state[1][2] = 144;
-    state[1][3] = 236;
-    state[2][0] = 70;
-    state[2][1] = 231;
-    state[2][2] = 74;
-    state[2][3] = 195;
-    state[3][0] = 166;
-    state[3][1] = 140;
-    state[3][2] = 216;
-    state[3][3] = 149;
+    roundKey[0][0] = 172;
+    roundKey[0][1] = 25;
+    roundKey[0][2] = 40;
+    roundKey[0][3] = 87;
+    roundKey[1][0] = 119;
+    roundKey[1][1] = 250;
+    roundKey[1][2] = 209;
+    roundKey[1][3] = 92;
+    roundKey[2][0] = 102;
+    roundKey[2][1] = 220;
+    roundKey[2][2] = 41;
+    roundKey[2][3] = 0;
+    roundKey[3][0] = 243;
+    roundKey[3][1] = 33;
+    roundKey[3][2] = 65;
+    roundKey[3][3] = 106;
 
-    cout << "State: " << endl;
-    printSquareMatrix(state);
-    cout << "New: " << endl;
-    MixColumns(state);
+    cout << "initial: " << endl;
     printSquareMatrix(state);
 
+    Encrypt(state, roundKey);
 
-    // for(int i=0; i<9; i++){                                 //9 rounds for 128 bit AES
-    //     SubBytes(state);
-    //     ShiftRows(state);
-    //     MixColumns(state);
-    //     AddRoundKey(state);
-    // }
-    // SubBytes(state);                                       //+1 round without MixColumns
-    // ShiftRows(state);
-    // AddRoundKey(state);
+    cout << "final: " << endl;
+    printSquareMatrix(state);
 
 }
 
 
+void Encrypt(vector<vector<unsigned char>> &state, vector<vector<unsigned char>> roundKey){
+    for(int i=0; i<9; i++){                                 //9 rounds for 128 bit AES
+        SubBytes(state);
+        ShiftRows(state);
+        MixColumns(state);
+        AddRoundKey(state, roundKey);
+    }
+    SubBytes(state);                                       //+1 round without MixColumns
+    ShiftRows(state);
+    AddRoundKey(state, roundKey);
+}
 
 void SubBytes(vector<vector<unsigned char>> &state){
     for(int i=0; i<4; i++){
@@ -176,8 +180,12 @@ void MixColumns(vector<vector<unsigned char>> &state){
     }
 }
 
-void AddRoundKey(vector<vector<unsigned char>> &state){
-
+void AddRoundKey(vector<vector<unsigned char>> &state, vector<vector<unsigned char>> roundKey){
+    for(int i=0; i<4; i++){
+        for(int j=0; j<4; j++){
+            state[i][j] = state[i][j] ^ roundKey[i][j];
+        }
+    }
 }
 
 void printSquareMatrix(vector<vector<unsigned char>> state){
