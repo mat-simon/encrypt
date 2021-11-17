@@ -8,28 +8,31 @@ using namespace std;
 void SubBytes(vector<vector<unsigned char>> &state);
 void ShiftRows(vector<vector<unsigned char>> &state);
 void MixColumns(vector<vector<unsigned char>> &state);
-void AddRoundKey(vector<vector<unsigned char>> &state, vector<vector<unsigned char>> roundKey);
-void Encrypt(vector<vector<unsigned char>> &state, vector<vector<unsigned char>> roundKey);
-void printSquareMatrix(vector<vector<unsigned char>> state);
-void keyExpand(unsigned char key[16], vector<unsigned int> &w);
+void AddRoundKey(vector<vector<unsigned char>> &state, unsigned char roundKey[4][4]);
+void Encrypt(vector<vector<unsigned char>> &state, unsigned char roundKey[11][4][4]);
+void Decrypt(vector<vector<unsigned char>> &state, unsigned char roundKey[11][4][4]);
+void printSquareMatrix(vector<vector<unsigned char>> matrix);
+void keyExpand(unsigned char key[16], unsigned char w[11][4][4]);
+void RotWord(vector<unsigned char> &temp);
+void SubWord(vector<unsigned char> &temp);
 
-const unsigned char SBox[16][16] = {
-    {0x63, 0x7C, 0x77, 0x7B, 0xF2, 0x6B, 0x6F, 0xC5, 0x30, 0x01, 0x67, 0x2B, 0xFE, 0xD7, 0xAB, 0x76},
-    {0xCA, 0x82, 0xC9, 0x7D, 0xFA, 0x59, 0x47, 0xF0, 0xAD, 0xD4, 0xA2, 0xAF, 0x9C, 0xA4, 0x72, 0xC0},
-    {0xB7, 0xFD, 0x93, 0x26, 0x36, 0x3F, 0xF7, 0xCC, 0x34, 0xA5, 0xE5, 0xF1, 0x71, 0xD8, 0x31, 0x15},
-    {0x04, 0xC7, 0x23, 0xC3, 0x18, 0x96, 0x05, 0x9A, 0x07, 0x12, 0x80, 0xE2, 0xEB, 0x27, 0xB2, 0x75},
-    {0x09, 0x83, 0x2C, 0x1A, 0x1B, 0x6E, 0x5A, 0xA0, 0x52, 0x3B, 0xD6, 0xB3, 0x29, 0xE3, 0x2F, 0x84},
-    {0x53, 0xD1, 0x00, 0xED, 0x20, 0xFC, 0xB1, 0x5B, 0x6A, 0xCB, 0xBE, 0x39, 0x4A, 0x4C, 0x58, 0xCF},
-    {0xD0, 0xEF, 0xAA, 0xFB, 0x43, 0x4D, 0x33, 0x85, 0x45, 0xF9, 0x02, 0x7F, 0x50, 0x3C, 0x9F, 0xA8},
-    {0x51, 0xA3, 0x40, 0x8F, 0x92, 0x9D, 0x38, 0xF5, 0xBC, 0xB6, 0xDA, 0x21, 0x10, 0xFF, 0xF3, 0xD2},
-    {0xCD, 0x0C, 0x13, 0xEC, 0x5F, 0x97, 0x44, 0x17, 0xC4, 0xA7, 0x7E, 0x3D, 0x64, 0x5D, 0x19, 0x73},
-    {0x60, 0x81, 0x4F, 0xDC, 0x22, 0x2A, 0x90, 0x88, 0x46, 0xEE, 0xB8, 0x14, 0xDE, 0x5E, 0x0B, 0xDB},
-    {0xE0, 0x32, 0x3A, 0x0A, 0x49, 0x06, 0x24, 0x5C, 0xC2, 0xD3, 0xAC, 0x62, 0x91, 0x95, 0xE4, 0x79},
-    {0xE7, 0xC8, 0x37, 0x6D, 0x8D, 0xD5, 0x4E, 0xA9, 0x6C, 0x56, 0xF4, 0xEA, 0x65, 0x7A, 0xAE, 0x08},
-    {0xBA, 0x78, 0x25, 0x2E, 0x1C, 0xA6, 0xB4, 0xC6, 0xE8, 0xDD, 0x74, 0x1F, 0x4B, 0xBD, 0x8B, 0x8A},
-    {0x70, 0x3E, 0xB5, 0x66, 0x48, 0x03, 0xF6, 0x0E, 0x61, 0x35, 0x57, 0xB9, 0x86, 0xC1, 0x1D, 0x9E},
-    {0xE1, 0xF8, 0x98, 0x11, 0x69, 0xD9, 0x8E, 0x94, 0x9B, 0x1E, 0x87, 0xE9, 0xCE, 0x55, 0x28, 0xDF},
-    {0x8C, 0xA1, 0x89, 0x0D, 0xBF, 0xE6, 0x42, 0x68, 0x41, 0x99, 0x2D, 0x0F, 0xB0, 0x54, 0xBB, 0x16}
+const unsigned char SBox[256] = {
+    0x63, 0x7C, 0x77, 0x7B, 0xF2, 0x6B, 0x6F, 0xC5, 0x30, 0x01, 0x67, 0x2B, 0xFE, 0xD7, 0xAB, 0x76,
+    0xCA, 0x82, 0xC9, 0x7D, 0xFA, 0x59, 0x47, 0xF0, 0xAD, 0xD4, 0xA2, 0xAF, 0x9C, 0xA4, 0x72, 0xC0,
+    0xB7, 0xFD, 0x93, 0x26, 0x36, 0x3F, 0xF7, 0xCC, 0x34, 0xA5, 0xE5, 0xF1, 0x71, 0xD8, 0x31, 0x15,
+    0x04, 0xC7, 0x23, 0xC3, 0x18, 0x96, 0x05, 0x9A, 0x07, 0x12, 0x80, 0xE2, 0xEB, 0x27, 0xB2, 0x75,
+    0x09, 0x83, 0x2C, 0x1A, 0x1B, 0x6E, 0x5A, 0xA0, 0x52, 0x3B, 0xD6, 0xB3, 0x29, 0xE3, 0x2F, 0x84,
+    0x53, 0xD1, 0x00, 0xED, 0x20, 0xFC, 0xB1, 0x5B, 0x6A, 0xCB, 0xBE, 0x39, 0x4A, 0x4C, 0x58, 0xCF,
+    0xD0, 0xEF, 0xAA, 0xFB, 0x43, 0x4D, 0x33, 0x85, 0x45, 0xF9, 0x02, 0x7F, 0x50, 0x3C, 0x9F, 0xA8,
+    0x51, 0xA3, 0x40, 0x8F, 0x92, 0x9D, 0x38, 0xF5, 0xBC, 0xB6, 0xDA, 0x21, 0x10, 0xFF, 0xF3, 0xD2,
+    0xCD, 0x0C, 0x13, 0xEC, 0x5F, 0x97, 0x44, 0x17, 0xC4, 0xA7, 0x7E, 0x3D, 0x64, 0x5D, 0x19, 0x73,
+    0x60, 0x81, 0x4F, 0xDC, 0x22, 0x2A, 0x90, 0x88, 0x46, 0xEE, 0xB8, 0x14, 0xDE, 0x5E, 0x0B, 0xDB,
+    0xE0, 0x32, 0x3A, 0x0A, 0x49, 0x06, 0x24, 0x5C, 0xC2, 0xD3, 0xAC, 0x62, 0x91, 0x95, 0xE4, 0x79,
+    0xE7, 0xC8, 0x37, 0x6D, 0x8D, 0xD5, 0x4E, 0xA9, 0x6C, 0x56, 0xF4, 0xEA, 0x65, 0x7A, 0xAE, 0x08,
+    0xBA, 0x78, 0x25, 0x2E, 0x1C, 0xA6, 0xB4, 0xC6, 0xE8, 0xDD, 0x74, 0x1F, 0x4B, 0xBD, 0x8B, 0x8A,
+    0x70, 0x3E, 0xB5, 0x66, 0x48, 0x03, 0xF6, 0x0E, 0x61, 0x35, 0x57, 0xB9, 0x86, 0xC1, 0x1D, 0x9E,
+    0xE1, 0xF8, 0x98, 0x11, 0x69, 0xD9, 0x8E, 0x94, 0x9B, 0x1E, 0x87, 0xE9, 0xCE, 0x55, 0x28, 0xDF,
+    0x8C, 0xA1, 0x89, 0x0D, 0xBF, 0xE6, 0x42, 0x68, 0x41, 0x99, 0x2D, 0x0F, 0xB0, 0x54, 0xBB, 0x16
 };
 
 const unsigned char mul2[] = {
@@ -70,47 +73,64 @@ const unsigned char mul3[] = {
     0x0b,0x08,0x0d,0x0e,0x07,0x04,0x01,0x02,0x13,0x10,0x15,0x16,0x1f,0x1c,0x19,0x1a
 };
 
-vector<unsigned int> w[44];
+const unsigned int RCon[10] = {0x01,
+                               0x02,
+                               0x04,
+                               0x08,
+                               0x10,
+                               0x20,
+                               0x40,
+                               0x80,
+                               0x1B,
+                               0x36
+};
 
 
 int main(){
-
-    const string message = "This will be the";
-    const unsigned char key[16] = {0x0F, 0x15, 0x71, 0xC9, 0x47, 0xD9, 0xE8, 0x59, 0x0C, 0xB7, 0xAD, 0xD6, 0xAF, 0x7F, 0x67, 0x98};
-    const int bits = 128;
-    const int cols = 4;
-    const int rows = (bits/8)/4;
+    // const string message = "Hi my name is Wu";                  //if using string input
+    // // populate 2d vector, state, with message data
+    // for(int i = 0; i < message.length(); i++){
+    //     for(int x = 0; x < cols; x++){
+    //         for(int y = 0; y < rows; y++){
+    //             state[x][y] = message[y*rows + x];              //populate by column
+    //         }
+    //     }
+    // }
+    unsigned char key[16] = {0x0F, 0x15, 0x71, 0xC9, 0x47, 0xD9, 0xE8, 0x59,
+                             0x0C, 0xB7, 0xAD, 0xD6, 0xAF, 0x7F, 0x67, 0x98};
+    unsigned char roundKey[11][4][4];
+    const unsigned char rows = 4;
+    const unsigned char cols = 4;
     vector<vector<unsigned char>> state(rows, vector<unsigned char>(cols));
-    vector<vector<unsigned char>> roundKey(rows, vector<unsigned char>(cols));
 
+    state[0][0] = 0x01;
+    state[1][0] = 0x23;
+    state[2][0] = 0x45;
+    state[3][0] = 0x67;
+    state[0][1] = 0x89;
+    state[1][1] = 0xab;
+    state[2][1] = 0xcd;
+    state[3][1] = 0xef;
+    state[0][2] = 0xfe;
+    state[1][2] = 0xdc;
+    state[2][2] = 0xba;
+    state[3][2] = 0x98;
+    state[0][3] = 0x76;
+    state[1][3] = 0x54;
+    state[2][3] = 0x32;
+    state[3][3] = 0x10;
 
-    //populate 2d vector, state, with message data
-    for(int i=0; i<message.length(); i++){
-        for(int x=0; x<cols; x++){
-            for(int y=0; y<rows; y++){
-                state[x][y] = message[y*rows + x];              //populate by column
-            }
-        }
-    }
+    keyExpand(key, roundKey);
 
-    // keyExpand(key, w);
-
-    roundKey[0][0] = 172;
-    roundKey[0][1] = 25;
-    roundKey[0][2] = 40;
-    roundKey[0][3] = 87;
-    roundKey[1][0] = 119;
-    roundKey[1][1] = 250;
-    roundKey[1][2] = 209;
-    roundKey[1][3] = 92;
-    roundKey[2][0] = 102;
-    roundKey[2][1] = 220;
-    roundKey[2][2] = 41;
-    roundKey[2][3] = 0;
-    roundKey[3][0] = 243;
-    roundKey[3][1] = 33;
-    roundKey[3][2] = 65;
-    roundKey[3][3] = 106;
+    // for(int b=0; b<11; b++){                                             //print round key
+    //     for(int i=0; i<4; i++){
+    //         for(int j=0; j<4; j++){
+    //             cout << (hex) << (unsigned)roundKey[b][i][j] << ' ' << ' ';
+    //         }
+    //     cout << endl;
+    //     }
+    //     cout << endl;
+    // }
 
     cout << "initial: " << endl;
     printSquareMatrix(state);
@@ -119,29 +139,37 @@ int main(){
 
     cout << "final: " << endl;
     printSquareMatrix(state);
-
 }
 
 
-void Encrypt(vector<vector<unsigned char>> &state, vector<vector<unsigned char>> roundKey){
-    AddRoundKey(state, roundKey);
-    for(int i=0; i<9; i++){                                 //9 total rounds for 128 bit AES
+void Encrypt(vector<vector<unsigned char>> &state, unsigned char roundKey[11][4][4]){
+    AddRoundKey(state, roundKey[0]);
+    for(int i = 0; i < 9; i++){                                 //9 full rounds for 128 bit AES
         SubBytes(state);
         ShiftRows(state);
         MixColumns(state);
-        AddRoundKey(state, roundKey);
+        AddRoundKey(state, roundKey[i+1]);
     }
-    SubBytes(state);                                       //+1 round without MixColumns
+    SubBytes(state);                                            //+1 round without MixColumns
     ShiftRows(state);
-    AddRoundKey(state, roundKey);
+    AddRoundKey(state, roundKey[10]);
+}
+
+void Decrypt(vector<vector<unsigned char>> &state, unsigned char roundKey[4][4][11]){
+    // todo
 }
 
 void SubBytes(vector<vector<unsigned char>> &state){
-    for(int i=0; i<4; i++){
-        for(int j=0; j<4; j++){
-            int row = (state[i][j] >> (4 * 1)) & 0x000F;       //1st hex digit
-            int col = (state[i][j] >> (4 * 0)) & 0x000F;       //2nd hex digit
-            state[i][j] = SBox[row][col];
+    // for(int i = 0; i < 4; i++){                                //use if Sbox is matrix
+    //     for(int j = 0; j < 4; j++){
+    //         int row = (state[i][j] >> (4 * 1)) & 0x000F;       //1st hex digit
+    //         int col = (state[i][j] >> (4 * 0)) & 0x000F;       //2nd hex digit
+    //         state[i][j] = SBox[row][col];
+    //     }
+    // }
+    for(int i = 0; i < 4; i++){                                   //use if Sbox is array
+        for(int j = 0; j < 4; j++){
+            state[i][j] = SBox[state[i][j]];
         }
     }
 }
@@ -174,7 +202,7 @@ void MixColumns(vector<vector<unsigned char>> &state){
     }
 }
 
-void AddRoundKey(vector<vector<unsigned char>> &state, vector<vector<unsigned char>> roundKey){
+void AddRoundKey(vector<vector<unsigned char>> &state, unsigned char roundKey[4][4]){
     for(int i=0; i<4; i++){
         for(int j=0; j<4; j++){
             state[i][j] = state[i][j] ^ roundKey[i][j];
@@ -182,39 +210,68 @@ void AddRoundKey(vector<vector<unsigned char>> &state, vector<vector<unsigned ch
     }
 }
 
-void printSquareMatrix(vector<vector<unsigned char>> state){
-
-    int dim = state.size();
-
+void printSquareMatrix(vector<vector<unsigned char>> matrix){
+    int dim = matrix.size();
     for(int i=0; i<dim; i++){
         for(int j=0; j<dim; j++){
-            cout << hex << (unsigned)(state[i][j]) << ' ';
-            //cout << state[i][j];
+            cout << hex << (unsigned int)(matrix[i][j]) << ' ' << ' ';
+            //cout << matrix[i][j];                                     //to cout chars instead of ints
         }
         cout << endl;
     }
 }
 
-// unsinged int SubWord(unsigned int temp){
+void SubWord(vector<unsigned char> &temp){
+    for(int i = 0; i < 4; i++){
+        temp[i] = SBox[temp[i]];
+    }
 
-// }
+    // unsigned char a[4] = {0, 0, 0, 0};           //for use later if temp is changed to array
+    // for(int i = 0; i < 4; i++){
+    //     a[i] = (temp >> (8*i)) & 0xff;
+    //     a[i] = SBox[a[i]];
+    // }
+    // temp = 0;
+    // temp |= (uint32_t)a[0] << 24;
+    // temp |= (uint32_t)a[1] << 16;
+    // temp |= (uint32_t)a[2] << 8;
+    // temp |= (uint32_t)a[3];
+}
 
-// unsigned int RotWord(unsigned int temp){
+void RotWord(vector<unsigned char> &temp){
+    rotate(temp.begin(), temp.begin() + 1, temp.end());
+    // temp = (temp << 8)|(temp >> (32 - 8));       //for use later if temp is changed to array, same rotate as above
+}
 
-// }
+void keyExpand(unsigned char key[16], unsigned char w[11][4][4]){
+    vector<unsigned char> temp = {0, 0, 0, 0};
 
-// void keyExpand(unsigned char key[], vector<unsigned int> &w){
-//     // from page 173 of textbook
-//     unsigned char temp[4];
-//     for(int i = 0; i < 4; i++){
-//         w[i] = key[4*i + i];
-//         cout << w[i] << endl;
-//     }
-//     for(int i = 4; i < 44; i++){
-//         temp = w[i - 1];
-//         if(i % 4 == 0){
-//             // temp = SubWord(RotWord(temp));
-//         }
-//         w[i] = w[i - 4] ^ temp;
-//     }
-// }
+    for(int i = 0; i < 4; i++){
+        for(int j = 0; j < 4; j++){
+            w[0][i][j] = key[4*j+i];
+        }
+    }
+
+    for(int b = 1; b < 11; b++){
+        for(int i = 0; i < 4; i++){
+            if(i == 0){
+                for(int j = 0; j < 4; j++){
+                    temp[j] = w[b-1][j][3];
+                }
+            }
+            else{
+                for(int j = 0; j < 4; j++){
+                    temp[j] = w[b][j][i-1];
+                }
+            }
+            if(i == 0){
+                RotWord(temp);
+                SubWord(temp);
+                temp[0] = temp[0] ^ RCon[b-1];
+            }
+            for(int j = 0; j < 4; j++){
+                w[b][j][i] = w[b-1][j][i] ^ temp[j];
+            }
+        }
+    }
+}
