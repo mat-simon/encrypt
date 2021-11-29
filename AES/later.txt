@@ -1,0 +1,39 @@
+void SubWord(vector<unsigned char> &temp){
+    for(int i = 0; i < 4; i++){
+        temp[i] = SBox[temp[i]];
+    }
+
+    // unsigned char a[4] = {0, 0, 0, 0};           //for use later if temp is changed to array
+    // for(int i = 0; i < 4; i++){
+    //     a[i] = (temp >> (8*i)) & 0xff;
+    //     a[i] = SBox[a[i]];
+    // }
+    // temp = 0;
+    // temp |= (uint32_t)a[0] << 24;
+    // temp |= (uint32_t)a[1] << 16;
+    // temp |= (uint32_t)a[2] << 8;
+    // temp |= (uint32_t)a[3];
+}
+
+void RotWord(vector<unsigned char> &temp){
+    rotate(temp.begin(), temp.begin() + 1, temp.end());
+    // temp = (temp << 8)|(temp >> (32 - 8));       // for use later if temp is changed to array, same rotate as above
+}
+
+void SubBytes(vector<vector<unsigned char>> &state){
+    for(int i = 0; i < 4; i++){                                   //use if Sbox is array
+        for(int j = 0; j < 4; j++){
+            state[i][j] = SBox[state[i][j]];
+        }
+    }
+    // cout << "After SubBytes:" << endl;
+    // printSquareMatrix(state);
+
+    // for(int i = 0; i < 4; i++){                                //use if Sbox is matrix
+    //     for(int j = 0; j < 4; j++){
+    //         int row = (state[i][j] >> (4 * 1)) & 0x000F;       //1st hex digit
+    //         int col = (state[i][j] >> (4 * 0)) & 0x000F;       //2nd hex digit
+    //         state[i][j] = SBox[row][col];
+    //     }
+    // }
+}
